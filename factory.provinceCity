@@ -1,0 +1,58 @@
+1. 服务
+// 定义服务，存储到promise中然后使用then调用
+// 省市联动服务
+    .factory("provinceCity", function (queryData, $http, $q) {
+        var provinceCity = {};
+        provinceCity.province = function () {
+            var defered = $q.defer();
+            $http.get("../common/json/city.json").success(function (data) {
+                defered.resolve(data);
+            }).error(function (data) {
+                defered.reject(data);
+            });
+            return defered.promise;
+        };
+        return provinceCity;
+    });
+    
+  2. 界面
+  <div class="col-sm-4">
+        <p>
+            <select ng-model="vm.entity.province" class="form-control" ng-change="provinceChange()">
+                <option value="{{item.name}}" ng-repeat="item in province track by $index">{{item.name}}</option>
+            </select>
+        </p>
+    </div>
+    <div class="col-sm-4">
+        <p>
+            <select ng-model="vm.entity.city" class="form-control">
+                <option value="{{item}}" ng-repeat="item in city track by $index">{{item}}</option>
+            </select>
+        </p>
+    </div>
+    
+    3. 控制器
+    // 初始化省份,市。
+    $scope.vm = {
+        entity: {
+            province: "北京",
+            city: "朝阳"
+        }
+    };
+    // 使用服务获取 省市联动
+    provinceCity.province().then(function (data) {
+        // 首先路由加载的时候显示省份信息, 和第一个省份(北京)对应的市信息
+        $scope.province = data;
+        $scope.city = data[0].cities;
+        // 省份改变的时候, 选择相应的市
+        $scope.provinceChange = function () {
+            for (var i = 0; i < data.length; i++) {
+                // 判断如果配置选中的省份,然后获取对应的市的数组
+                if (data[i].name == $scope.vm.entity.province) {
+                    $scope.city = data[i].cities;
+                    // 设置默认值, 切换省份的时候, 市级默认选择数组里面的第一个
+                    $scope.vm.entity.city = data[i].cities[0];
+                }
+            }
+        }
+    });
